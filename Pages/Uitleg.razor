@@ -1,0 +1,66 @@
+@page "/uitleg"
+
+<PageTitle>Hoe werkt XP?</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Hoe werkt XP?</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">XP verdienen</MudText>
+    <MudList T="string" Dense="true">
+        <MudListItem T="string" Icon="@Icons.Material.Filled.MonitorWeight">
+            <MudText><b>+10 XP</b> per weging die je logt</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.TrendingDown">
+            <MudText><b>+15 XP</b> per meting in de langste reeks vooruitgang die je ooit hebt neergezet (blijft staan, ook na een mindere periode)</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.Flag">
+            <MudText><b>+50 / +100 / +150 / +250 XP</b> als je 25% / 50% / 75% / 100% van je doel bereikt (eenmalig, blijft staan)</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.EmojiEvents">
+            <MudText><b>+25 XP</b> per badge die je unlockt</MudText>
+        </MudListItem>
+    </MudList>
+</MudPaper>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Levels &amp; rangen</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">
+        Elk level kost meer XP dan het vorige — hoe hoger je level, hoe meer inzet voor de volgende stap. Je level daalt nooit, ook niet als je een mindere periode hebt.
+    </MudText>
+    <MudSimpleTable Dense="true">
+        <thead>
+            <tr>
+                <th>Level</th>
+                <th>Rang</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>1 - 2</td><td>🥉 Brons</td></tr>
+            <tr><td>3 - 5</td><td>🥈 Zilver</td></tr>
+            <tr><td>6 - 9</td><td>🥇 Goud</td></tr>
+            <tr><td>10+</td><td>💎 Platina</td></tr>
+        </tbody>
+    </MudSimpleTable>
+</MudPaper>
+
+<MudText Typo="Typo.subtitle1" Class="mb-2">Alle badges</MudText>
+<MudPaper Class="pa-2" Elevation="2">
+    <MudList T="string" Dense="true">
+        @foreach (var badge in _badges)
+        {
+            <MudListItem T="string">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                    <MudText Typo="Typo.h5">@badge.Emoji</MudText>
+                    <div>
+                        <MudText Typo="Typo.body1">@badge.Title</MudText>
+                        <MudText Typo="Typo.caption">@badge.Description</MudText>
+                    </div>
+                </MudStack>
+            </MudListItem>
+        }
+    </MudList>
+</MudPaper>
+
+@code {
+    private readonly List<BadgeInfo> _badges = GamificationEngine.AllBadgeDefinitions();
+}

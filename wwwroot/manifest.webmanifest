@@ -1,0 +1,38 @@
+{
+  "name": "WeightTracker",
+  "short_name": "WeightTracker",
+  "description": "Privacy-first gewichtstracker: alle data blijft op je toestel.",
+  "id": "./",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#03173d",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Wegen",
+      "short_name": "Wegen",
+      "description": "Voeg direct een nieuwe gewichtsmeting toe",
+      "url": "./?action=wegen",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "type": "image/png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

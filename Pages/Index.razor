@@ -1,0 +1,224 @@
+@page "/"
+@inject WeightDataService DataService
+@inject ChartInteropService ChartService
+@inject IDialogService DialogService
+
+<PageTitle>Wegen</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Wegen</MudText>
+    @if (_entries is { Count: > 0 })
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" Color="Color.Error" OnClick="ConfirmClearAll" title="Wis alle wegingen" />
+    }
+</MudStack>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudGrid>
+        <MudItem xs="6">
+            <MudDatePicker @bind-Date="_entryDate" Label="Datum" Editable="true" />
+        </MudItem>
+        <MudItem xs="6">
+            <MudNumericField @bind-Value="_entryWeight" Label="Gewicht (kg)" Format="F1" Step="0.1m" Min="0m" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SaveEntry">
+                Opslaan
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudGrid>
+        <MudItem xs="8">
+            <MudNumericField @bind-Value="_goalInput" Label="Doel (kg)" Format="F1" Step="0.1m" Min="0m" />
+        </MudItem>
+        <MudItem xs="4" Class="d-flex align-center">
+            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="SaveGoal">Doel opslaan</MudButton>
+        </MudItem>
+    </MudGrid>
+    @if (_goal is not null && _entries is { Count: > 0 })
+    {
+        var remaining = _entries[^1].WeightKg - _goal.Value;
+        <MudText Typo="Typo.body2" Class="mt-2">
+            @if (Math.Abs(remaining) < 0.05)
+            {
+                @:Doel bereikt! 🎉
+            }
+            else
+            {
+                @:Nog @(Math.Abs(remaining).ToString("F1")) kg te gaan naar je doel.
+            }
+        </MudText>
+    }
+</MudPaper>
+
+@if (_entries is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_entries.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">Nog geen metingen. Voeg je eerste gewicht toe.</MudAlert>
+}
+else
+{
+    @if (_trend is not null)
+    {
+        <MudGrid Class="mb-4">
+            <MudItem xs="6">
+                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
+                    <MudIcon Icon="@TrendIcon(_trend.LastVsPrevious)" Color="@TrendColor(_trend.LastVsPrevious, _trend.LastVsPreviousGood)" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@LastVsPreviousLabel()</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6">
+                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
+                    <MudIcon Icon="@TrendIcon(_trend.Overall)" Color="@TrendColor(_trend.Overall, _trend.OverallGood)" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@OverallTrendLabel()</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <canvas id="weightChart" height="200"></canvas>
+    </MudPaper>
+
+    <MudTable Items="@_entries.AsEnumerable().Reverse()" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Datum</MudTh>
+            <MudTh>Gewicht (kg)</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Datum">@context.Date.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Gewicht">@context.WeightKg.ToString("F1")</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteEntry(context.Date))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<WeightEntry>? _entries;
+    private DateTime? _entryDate = DateTime.Today;
+    private decimal _entryWeight = 80m;
+    private bool _chartDirty;
+    private double? _goal;
+    private decimal? _goalInput;
+    private TrendInfo? _trend;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _goal = await DataService.GetGoalAsync();
+        _goalInput = (decimal?)_goal;
+        await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_chartDirty && _entries is { Count: > 0 })
+        {
+            _chartDirty = false;
+            await RenderChartAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _entries = await DataService.GetEntriesAsync();
+        _trend = WeightDataService.ComputeTrend(_entries, _goal);
+        _chartDirty = true;
+    }
+
+    private async Task RenderChartAsync()
+    {
+        if (_entries is null || _entries.Count == 0)
+        {
+            return;
+        }
+
+        var labels = _entries.Select(e => e.Date.ToString("dd/MM")).ToList();
+        var values = _entries.Select(e => e.WeightKg).ToList();
+        await ChartService.RenderLineChartAsync("weightChart", "Gewicht (kg)", labels, values, "#594AE2");
+    }
+
+    private async Task SaveEntry()
+    {
+        if (_entryDate is null)
+        {
+            return;
+        }
+
+        var entry = new WeightEntry
+        {
+            Date = DateOnly.FromDateTime(_entryDate.Value),
+            WeightKg = (double)_entryWeight
+        };
+
+        await DataService.AddEntryAsync(entry);
+        await LoadAsync();
+    }
+
+    private async Task DeleteEntry(DateOnly date)
+    {
+        await DataService.DeleteEntryAsync(date);
+        await LoadAsync();
+    }
+
+    private async Task SaveGoal()
+    {
+        _goal = (double?)_goalInput;
+        await DataService.SetGoalAsync(_goal);
+        _trend = _entries is null ? null : WeightDataService.ComputeTrend(_entries, _goal);
+    }
+
+    private async Task ConfirmClearAll()
+    {
+        var result = await DialogService.ShowMessageBoxAsync(
+            "Alles wissen?",
+            "Weet je zeker dat je alle wegingen wilt verwijderen? Dit kan niet ongedaan gemaakt worden.",
+            yesText: "Wissen",
+            cancelText: "Annuleer");
+
+        if (result == true)
+        {
+            await DataService.ClearAllEntriesAsync();
+            await LoadAsync();
+        }
+    }
+
+    private static string TrendIcon(TrendDirection direction) => direction switch
+    {
+        TrendDirection.Down => Icons.Material.Filled.TrendingDown,
+        TrendDirection.Up => Icons.Material.Filled.TrendingUp,
+        TrendDirection.Flat => Icons.Material.Filled.TrendingFlat,
+        _ => Icons.Material.Filled.HourglassEmpty
+    };
+
+    private static Color TrendColor(TrendDirection direction, bool good) => direction switch
+    {
+        TrendDirection.Unknown => Color.Default,
+        TrendDirection.Flat => Color.Info,
+        _ => good ? Color.Success : Color.Error
+    };
+
+    private string LastVsPreviousLabel() => _trend?.LastVsPrevious switch
+    {
+        TrendDirection.Down => "Lager dan vorige meting",
+        TrendDirection.Up => "Hoger dan vorige meting",
+        TrendDirection.Flat => "Gelijk aan vorige meting",
+        _ => "Nog niet genoeg data"
+    };
+
+    private string OverallTrendLabel() => _trend?.Overall switch
+    {
+        TrendDirection.Down => "Dalende trend",
+        TrendDirection.Up => "Stijgende trend",
+        TrendDirection.Flat => "Vlakke trend",
+        _ => "Nog niet genoeg data"
+    };
+}

@@ -1,0 +1,83 @@
+@page "/delen"
+@inject WeightDataService DataService
+@inject ChartInteropService ChartService
+
+<PageTitle>Delen</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Voortgang delen</MudText>
+
+@if (_achievement is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_entryCount == 0)
+{
+    <MudAlert Severity="Severity.Info">Nog geen metingen om te delen.</MudAlert>
+}
+else
+{
+    <div style="max-width: 320px; margin: 0 auto;" class="mb-4">
+        <canvas id="achievementCanvas" style="width:100%; aspect-ratio: 4 / 5; display:block; border-radius: 28px;"></canvas>
+    </div>
+
+    @if (_achievement.ProgressPercent is null)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+            Stel een doel in op de Wegen-pagina om ook je voortgangscirkel te zien.
+        </MudAlert>
+    }
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+               StartIcon="@Icons.Material.Filled.Share" OnClick="ShareProgress">
+        Deel Voortgang
+    </MudButton>
+}
+
+@code {
+    private AchievementInfo? _achievement;
+    private int _entryCount;
+    private bool _cardDirty;
+    private string _emoji = "";
+    private string _title = "";
+    private string? _subtitle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var entries = await DataService.GetEntriesAsync();
+        var goal = await DataService.GetGoalAsync();
+
+        _entryCount = entries.Count;
+        _achievement = WeightDataService.BuildAchievement(entries, goal);
+        (_emoji, _title) = MoodFor(_achievement);
+        _subtitle = SubtitleFor(_achievement);
+        _cardDirty = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_cardDirty && _entryCount > 0)
+        {
+            _cardDirty = false;
+            await ChartService.RenderAchievementAsync("achievementCanvas", _achievement!.ProgressPercent, _emoji, _title, _subtitle);
+        }
+    }
+
+    private static (string Emoji, string Title) MoodFor(AchievementInfo info) => info.Trend switch
+    {
+        TrendDirection.Unknown => ("🌱", "Nieuwe start"),
+        TrendDirection.Flat => ("😌", "Stabiel blijven"),
+        _ when info.TrendGood => ("🔥", "Op dreef!"),
+        _ => ("😬", "Kleine tegenslag")
+    };
+
+    private static string SubtitleFor(AchievementInfo info) => info.Streak switch
+    {
+        >= 3 => $"{info.Streak}x op rij vooruitgang!",
+        2 => "2x op rij vooruitgang!",
+        1 => "Weer een stapje dichterbij",
+        _ => info.Trend == TrendDirection.Unknown ? "Elke stap telt" : "Morgen weer een kans"
+    };
+
+    private Task ShareProgress()
+        => ChartService.ShareCanvasAsync("achievementCanvas", "Voortgang", "Kijk naar mijn voortgang!").AsTask();
+}

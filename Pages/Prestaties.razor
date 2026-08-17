@@ -1,0 +1,82 @@
+@page "/prestaties"
+@inject WeightDataService DataService
+
+<PageTitle>Prestaties</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Prestaties</MudText>
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.HelpOutline" Href="/uitleg" Size="Size.Small">
+        Hoe werkt dit?
+    </MudButton>
+</MudStack>
+
+@if (_gamification is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+            <MudText Typo="Typo.h4">Level @_gamification.Level</MudText>
+            <MudChip T="string" Color="@RankColor(_gamification.RankTitle)" Size="Size.Medium">@_gamification.RankTitle</MudChip>
+        </MudStack>
+        <MudProgressLinear Color="Color.Primary" Value="@LevelProgressPercent()" Class="mb-1" Rounded="true" Size="Size.Large" />
+        <MudText Typo="Typo.caption">@_gamification.XpIntoLevel / @_gamification.XpForNextLevel XP naar level @(_gamification.Level + 1)</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+            <MudText Typo="Typo.subtitle1">@_gamification.WeeklyQuest.Title</MudText>
+            @if (_gamification.WeeklyQuest.Completed)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+            }
+        </MudStack>
+        <MudProgressLinear Color="@(_gamification.WeeklyQuest.Completed ? Color.Success : Color.Primary)"
+                            Value="@(_gamification.WeeklyQuest.Progress * 100.0 / _gamification.WeeklyQuest.Target)"
+                            Rounded="true" Class="mb-1" />
+        <MudText Typo="Typo.caption">@_gamification.WeeklyQuest.Progress / @_gamification.WeeklyQuest.Target deze week</MudText>
+    </MudPaper>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Badges</MudText>
+    <MudGrid>
+        @foreach (var badge in _gamification.Badges)
+        {
+            <MudItem xs="4">
+                <MudTooltip Text="@badge.Description" Arrow="true" Placement="Placement.Top">
+                    <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="@(badge.Unlocked ? 2 : 0)"
+                               Style="@(badge.Unlocked ? "" : "opacity: 0.35;")">
+                        <MudText Typo="Typo.h4">@badge.Emoji</MudText>
+                        <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@badge.Title</MudText>
+                    </MudPaper>
+                </MudTooltip>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private GamificationInfo? _gamification;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var entries = await DataService.GetEntriesAsync();
+        var goal = await DataService.GetGoalAsync();
+        _gamification = GamificationEngine.Build(entries, goal, DateOnly.FromDateTime(DateTime.Today));
+    }
+
+    private double LevelProgressPercent()
+        => _gamification is null || _gamification.XpForNextLevel == 0
+            ? 0
+            : _gamification.XpIntoLevel * 100.0 / _gamification.XpForNextLevel;
+
+    private static Color RankColor(string rank) => rank switch
+    {
+        "Brons" => Color.Tertiary,
+        "Zilver" => Color.Default,
+        "Goud" => Color.Warning,
+        "Platina" => Color.Info,
+        _ => Color.Default
+    };
+}
