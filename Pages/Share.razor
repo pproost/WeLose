@@ -16,6 +16,24 @@ else if (_entryCount == 0)
 }
 else
 {
+    @if (_trend is not null)
+    {
+        <MudGrid Class="mb-4">
+            <MudItem xs="6">
+                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
+                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.LastVsPrevious)" Color="@TrendPresentation.TrendColor(_trend.LastVsPrevious, _trend.LastVsPreviousGood)" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.LastVsPreviousLabel(_trend.LastVsPrevious)</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6">
+                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
+                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.Overall)" Color="@TrendPresentation.TrendColor(_trend.Overall, _trend.OverallGood)" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.OverallLabel(_trend.Overall)</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
     <div style="max-width: 320px; margin: 0 auto;" class="mb-4">
         <canvas id="achievementCanvas" style="width:100%; aspect-ratio: 4 / 5; display:block; border-radius: 28px;"></canvas>
     </div>
@@ -35,6 +53,7 @@ else
 
 @code {
     private AchievementInfo? _achievement;
+    private TrendInfo? _trend;
     private int _entryCount;
     private bool _cardDirty;
     private string _emoji = "";
@@ -48,6 +67,7 @@ else
 
         _entryCount = entries.Count;
         _achievement = WeightDataService.BuildAchievement(entries, goal);
+        _trend = WeightDataService.ComputeTrend(entries, goal);
         (_emoji, _title) = MoodFor(_achievement);
         _subtitle = SubtitleFor(_achievement);
         _cardDirty = true;

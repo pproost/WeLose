@@ -69,14 +69,14 @@ else
         <MudGrid Class="mb-4">
             <MudItem xs="6">
                 <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
-                    <MudIcon Icon="@TrendIcon(_trend.LastVsPrevious)" Color="@TrendColor(_trend.LastVsPrevious, _trend.LastVsPreviousGood)" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@LastVsPreviousLabel()</MudText>
+                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.LastVsPrevious)" Color="@TrendPresentation.TrendColor(_trend.LastVsPrevious, _trend.LastVsPreviousGood)" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.LastVsPreviousLabel(_trend.LastVsPrevious)</MudText>
                 </MudPaper>
             </MudItem>
             <MudItem xs="6">
                 <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
-                    <MudIcon Icon="@TrendIcon(_trend.Overall)" Color="@TrendColor(_trend.Overall, _trend.OverallGood)" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@OverallTrendLabel()</MudText>
+                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.Overall)" Color="@TrendPresentation.TrendColor(_trend.Overall, _trend.OverallGood)" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.OverallLabel(_trend.Overall)</MudText>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -191,34 +191,4 @@ else
         }
     }
 
-    private static string TrendIcon(TrendDirection direction) => direction switch
-    {
-        TrendDirection.Down => Icons.Material.Filled.TrendingDown,
-        TrendDirection.Up => Icons.Material.Filled.TrendingUp,
-        TrendDirection.Flat => Icons.Material.Filled.TrendingFlat,
-        _ => Icons.Material.Filled.HourglassEmpty
-    };
-
-    private static Color TrendColor(TrendDirection direction, bool good) => direction switch
-    {
-        TrendDirection.Unknown => Color.Default,
-        TrendDirection.Flat => Color.Info,
-        _ => good ? Color.Success : Color.Error
-    };
-
-    private string LastVsPreviousLabel() => _trend?.LastVsPrevious switch
-    {
-        TrendDirection.Down => "Lager dan vorige meting",
-        TrendDirection.Up => "Hoger dan vorige meting",
-        TrendDirection.Flat => "Gelijk aan vorige meting",
-        _ => "Nog niet genoeg data"
-    };
-
-    private string OverallTrendLabel() => _trend?.Overall switch
-    {
-        TrendDirection.Down => "Dalende trend",
-        TrendDirection.Up => "Stijgende trend",
-        TrendDirection.Flat => "Vlakke trend",
-        _ => "Nog niet genoeg data"
-    };
 }
