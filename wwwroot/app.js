@@ -118,9 +118,15 @@ window.achievementCard = (function () {
         roundRect(ctx, 0, 0, width, height, 28);
         ctx.clip();
 
+        if (opts.trendLast && opts.trendOverall) {
+            const badgeY = height * 0.11;
+            drawTrendBadge(ctx, width * 0.27, badgeY, opts.trendLast);
+            drawTrendBadge(ctx, width * 0.73, badgeY, opts.trendOverall);
+        }
+
         const cx = width / 2;
-        const cy = height / 2 - 30;
-        const radius = Math.min(width, height) / 2 - 50;
+        const cy = height * 0.46;
+        const radius = width / 2 - 50;
 
         if (opts.percent !== null && opts.percent !== undefined) {
             ctx.beginPath();
@@ -155,6 +161,19 @@ window.achievementCard = (function () {
         }
 
         ctx.restore();
+    }
+
+    function drawTrendBadge(ctx, cx, cy, badge) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.font = 'bold 24px "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = badge.color;
+        ctx.fillText(badge.symbol, cx, cy);
+
+        ctx.font = '13px "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText(badge.label, cx, cy + 21);
     }
 
     return { render, share: shareCanvas };

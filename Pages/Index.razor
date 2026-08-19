@@ -64,23 +64,7 @@ else if (_entries.Count == 0)
 }
 else
 {
-    @if (_trend is not null)
-    {
-        <MudGrid Class="mb-4">
-            <MudItem xs="6">
-                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
-                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.LastVsPrevious)" Color="@TrendPresentation.TrendColor(_trend.LastVsPrevious, _trend.LastVsPreviousGood)" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.LastVsPreviousLabel(_trend.LastVsPrevious)</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
-                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.Overall)" Color="@TrendPresentation.TrendColor(_trend.Overall, _trend.OverallGood)" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.OverallLabel(_trend.Overall)</MudText>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-    }
+    <TrendCards Trend="_trend" />
 
     <MudPaper Class="pa-4 mb-4" Elevation="2">
         <canvas id="weightChart" height="200"></canvas>

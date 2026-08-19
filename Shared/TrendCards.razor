@@ -1,0 +1,22 @@
+@if (Trend is not null)
+{
+    <MudGrid Class="@Class">
+        <MudItem xs="6" Class="d-flex">
+            <MudPaper Class="pa-3 d-flex flex-column align-center justify-center flex-grow-1" Elevation="1" Style="min-height: 6.5rem;">
+                <MudIcon Icon="@TrendPresentation.TrendIcon(Trend.LastVsPrevious)" Color="@TrendPresentation.TrendColor(Trend.LastVsPrevious, Trend.LastVsPreviousGood)" Size="Size.Large" />
+                <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.LastVsPreviousLabel(Trend.LastVsPrevious)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" Class="d-flex">
+            <MudPaper Class="pa-3 d-flex flex-column align-center justify-center flex-grow-1" Elevation="1" Style="min-height: 6.5rem;">
+                <MudIcon Icon="@TrendPresentation.TrendIcon(Trend.Overall)" Color="@TrendPresentation.TrendColor(Trend.Overall, Trend.OverallGood)" Size="Size.Large" />
+                <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.OverallLabel(Trend.Overall)</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public TrendInfo? Trend { get; set; }
+    [Parameter] public string Class { get; set; } = "mb-4";
+}

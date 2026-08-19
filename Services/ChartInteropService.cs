@@ -17,6 +17,17 @@ public class ChartInteropService
     public ValueTask ShareCanvasAsync(string canvasId, string title, string text)
         => _js.InvokeVoidAsync("weightChart.share", canvasId, title, text);
 
-    public ValueTask RenderAchievementAsync(string canvasId, double? percent, string emoji, string title, string? subtitle)
-        => _js.InvokeVoidAsync("achievementCard.render", canvasId, new { percent, emoji, title, subtitle });
+    public ValueTask RenderAchievementAsync(
+        string canvasId, double? percent, string emoji, string title, string? subtitle,
+        (string Symbol, string Color, string Label) trendLast,
+        (string Symbol, string Color, string Label) trendOverall)
+        => _js.InvokeVoidAsync("achievementCard.render", canvasId, new
+        {
+            percent,
+            emoji,
+            title,
+            subtitle,
+            trendLast = new { symbol = trendLast.Symbol, color = trendLast.Color, label = trendLast.Label },
+            trendOverall = new { symbol = trendOverall.Symbol, color = trendOverall.Color, label = trendOverall.Label }
+        });
 }

@@ -16,26 +16,10 @@ else if (_entryCount == 0)
 }
 else
 {
-    @if (_trend is not null)
-    {
-        <MudGrid Class="mb-4">
-            <MudItem xs="6">
-                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
-                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.LastVsPrevious)" Color="@TrendPresentation.TrendColor(_trend.LastVsPrevious, _trend.LastVsPreviousGood)" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.LastVsPreviousLabel(_trend.LastVsPrevious)</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
-                    <MudIcon Icon="@TrendPresentation.TrendIcon(_trend.Overall)" Color="@TrendPresentation.TrendColor(_trend.Overall, _trend.OverallGood)" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">@TrendPresentation.OverallLabel(_trend.Overall)</MudText>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-    }
+    <TrendCards Trend="_trend" />
 
     <div style="max-width: 320px; margin: 0 auto;" class="mb-4">
-        <canvas id="achievementCanvas" style="width:100%; aspect-ratio: 4 / 5; display:block; border-radius: 28px;"></canvas>
+        <canvas id="achievementCanvas" style="width:100%; aspect-ratio: 2 / 3; display:block; border-radius: 28px;"></canvas>
     </div>
 
     @if (_achievement.ProgressPercent is null)
@@ -78,7 +62,12 @@ else
         if (_cardDirty && _entryCount > 0)
         {
             _cardDirty = false;
-            await ChartService.RenderAchievementAsync("achievementCanvas", _achievement!.ProgressPercent, _emoji, _title, _subtitle);
+            var lastBadge = TrendBadge(_trend!.LastVsPrevious, _trend.LastVsPreviousGood, ShortLastVsPreviousLabel(_trend.LastVsPrevious));
+            var overallBadge = TrendBadge(_trend.Overall, _trend.OverallGood, ShortOverallLabel(_trend.Overall));
+
+            await ChartService.RenderAchievementAsync(
+                "achievementCanvas", _achievement!.ProgressPercent, _emoji, _title, _subtitle,
+                lastBadge, overallBadge);
         }
     }
 
@@ -96,6 +85,42 @@ else
         2 => "2x op rij vooruitgang!",
         1 => "Weer een stapje dichterbij",
         _ => info.Trend == TrendDirection.Unknown ? "Elke stap telt" : "Morgen weer een kans"
+    };
+
+    private static (string Symbol, string Color, string Label) TrendBadge(TrendDirection direction, bool good, string label)
+    {
+        var color = direction switch
+        {
+            TrendDirection.Unknown => "#C0C0C0",
+            TrendDirection.Flat => "#4FC3F7",
+            _ => good ? "#4CAF50" : "#F44336"
+        };
+
+        var symbol = direction switch
+        {
+            TrendDirection.Down => "▼",
+            TrendDirection.Up => "▲",
+            TrendDirection.Flat => "▬",
+            _ => "•"
+        };
+
+        return (symbol, color, label);
+    }
+
+    private static string ShortLastVsPreviousLabel(TrendDirection direction) => direction switch
+    {
+        TrendDirection.Down => "Lager",
+        TrendDirection.Up => "Hoger",
+        TrendDirection.Flat => "Gelijk",
+        _ => "Nieuw"
+    };
+
+    private static string ShortOverallLabel(TrendDirection direction) => direction switch
+    {
+        TrendDirection.Down => "Dalend",
+        TrendDirection.Up => "Stijgend",
+        TrendDirection.Flat => "Vlak",
+        _ => "Nieuw"
     };
 
     private Task ShareProgress()
