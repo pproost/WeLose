@@ -135,13 +135,17 @@ window.achievementCard = (function () {
             ctx.strokeStyle = 'rgba(255,255,255,0.25)';
             ctx.stroke();
 
+            const isRegressing = opts.percent < 0;
+            const fraction = Math.max(0.02, Math.abs(opts.percent) / 100);
+            const sweep = Math.PI * 2 * fraction;
             const startAngle = -Math.PI / 2;
-            const endAngle = startAngle + (Math.PI * 2 * Math.max(0.02, opts.percent / 100));
+            const endAngle = isRegressing ? startAngle - sweep : startAngle + sweep;
+
             ctx.beginPath();
-            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.arc(cx, cy, radius, startAngle, endAngle, isRegressing);
             ctx.lineWidth = 16;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = '#ffffff';
+            ctx.strokeStyle = isRegressing ? '#F44336' : '#ffffff';
             ctx.stroke();
         }
 

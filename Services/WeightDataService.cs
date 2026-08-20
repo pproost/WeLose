@@ -146,7 +146,7 @@ public class WeightDataService
             if (Math.Abs(totalToLose) > 0.001)
             {
                 var progressed = startWeight - currentWeight;
-                achievement.ProgressPercent = Math.Clamp(progressed / totalToLose * 100, 0, 100);
+                achievement.ProgressPercent = Math.Clamp(progressed / totalToLose * 100, -100, 100);
             }
         }
 
