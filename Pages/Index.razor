@@ -2,6 +2,9 @@
 @inject WeightDataService DataService
 @inject ChartInteropService ChartService
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@using System.Text.Json
 
 <PageTitle>Wegen</PageTitle>
 
@@ -86,6 +89,21 @@ else
     </MudTable>
 }
 
+<MudPaper Class="pa-4 mt-4" Elevation="2">
+    <MudText Typo="Typo.subtitle1">Gegevens</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">Nieuwe gsm? Exporteer je wegingen en doel naar een bestand en importeer het op je nieuwe toestel.</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download" OnClick="ExportData"
+                   Disabled="@(_entries is not { Count: > 0 })">
+            Exporteren
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Upload" HtmlTag="label" for="importFile">
+            Importeren
+        </MudButton>
+        <InputFile id="importFile" OnChange="ImportData" accept=".json,application/json" style="display:none" />
+    </MudStack>
+</MudPaper>
+
 @code {
     private List<WeightEntry>? _entries;
     private DateTime? _entryDate = DateTime.Today;
@@ -116,6 +134,11 @@ else
         _entries = await DataService.GetEntriesAsync();
         _trend = WeightDataService.ComputeTrend(_entries, _goal);
         _chartDirty = true;
+
+        if (_entries.Count > 0)
+        {
+            _entryWeight = (decimal)_entries[^1].WeightKg;
+        }
     }
 
     private async Task RenderChartAsync()
@@ -173,6 +196,54 @@ else
             await DataService.ClearAllEntriesAsync();
             await LoadAsync();
         }
+    }
+
+    private async Task ExportData()
+    {
+        var json = await DataService.ExportJsonAsync();
+        var fileName = $"together-we-lose-{DateTime.Today:yyyy-MM-dd}.json";
+        await JS.InvokeVoidAsync("downloadTextFile", fileName, json);
+    }
+
+    private async Task ImportData(InputFileChangeEventArgs e)
+    {
+        string json;
+        try
+        {
+            using var reader = new StreamReader(e.File.OpenReadStream(maxAllowedSize: 1024 * 1024));
+            json = await reader.ReadToEndAsync();
+        }
+        catch (IOException)
+        {
+            Snackbar.Add("Het bestand kon niet gelezen worden.", Severity.Error);
+            return;
+        }
+
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "Gegevens importeren?",
+            "Dit vervangt al je huidige wegingen en je doel door de inhoud van het bestand.",
+            yesText: "Importeren",
+            cancelText: "Annuleer");
+
+        if (confirm != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await DataService.ImportJsonAsync(json);
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidDataException)
+        {
+            Snackbar.Add("Dit is geen geldig exportbestand.", Severity.Error);
+            return;
+        }
+
+        _goal = await DataService.GetGoalAsync();
+        _goalInput = (decimal?)_goal;
+        await LoadAsync();
+        Snackbar.Add($"{_entries!.Count} wegingen geïmporteerd.", Severity.Success);
     }
 
 }

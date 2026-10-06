@@ -96,6 +96,35 @@ public class WeightDataService
         }
     }
 
+    public async Task<string> ExportJsonAsync()
+    {
+        var data = new ExportData
+        {
+            Entries = await GetEntriesAsync(),
+            GoalKg = await GetGoalAsync()
+        };
+
+        return JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    // Replaces all current entries and the goal with the contents of an export file.
+    public async Task ImportJsonAsync(string json)
+    {
+        var data = JsonSerializer.Deserialize<ExportData>(json);
+        if (data?.Entries is null || data.Entries.Any(e => e.WeightKg <= 0))
+        {
+            throw new InvalidDataException("Ongeldig exportbestand.");
+        }
+
+        var entries = data.Entries
+            .GroupBy(e => e.Date)
+            .Select(g => g.Last())
+            .ToList();
+
+        await SaveAsync(entries);
+        await SetGoalAsync(data.GoalKg);
+    }
+
     private async Task SaveAsync(List<WeightEntry> entries)
     {
         _cache = entries.OrderBy(e => e.Date).ToList();
